@@ -1,4 +1,8 @@
 # api_flask.py
+import os
+# Réduire les logs verbeux de TensorFlow AVANT de l'importer
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # 0: tout, 1: filtre INFO, 2: filtre INFO+WARNING, 3: seulement erreurs
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pathlib import Path
@@ -60,7 +64,7 @@ def _load_model_and_config(model_name: str):
     config.json (exemple) :
     {
       "model_type": "keras_h5",          // "keras_h5" | "tf_savedmodel"
-      "model_path": "model.h5",          // relatif au dossier du modèle
+      "model_path": "model.h5",          // relatif au dossier du modèle ou "." si SavedModel ici
       "input_format": "image",           // "image" | "numeric"
       "img_size": [224, 224],            // requis si image
       "scale_0_1": true,                 // normaliser 0..1
@@ -136,6 +140,14 @@ def _postprocess_predictions(preds: np.ndarray, class_names=None):
 # ---------------------------------------------------------------------
 # ROUTES
 # ---------------------------------------------------------------------
+@app.get("/")
+def home():
+    return jsonify({
+        "status": "ok",
+        "service": "Potato Disease API",
+        "routes": ["/ping", "/models", "/predict?model=<id>"]
+    })
+
 @app.get("/ping")
 def ping():
     return "Hello, I am alive"
@@ -148,7 +160,6 @@ def list_models():
 def model_info(model_name: str):
     try:
         _, cfg = _load_model_and_config(model_name)
-        # Ne retourne pas tout le fichier brut (sécurité); on expose l’essentiel
         info = {
             "model_name": model_name,
             "model_type": cfg.get("model_type"),
@@ -165,8 +176,6 @@ def model_info(model_name: str):
 
 @app.post("/predict")
 def predict():
-    
-    
     """
     Usage:
     - Sélection du modèle:
@@ -226,5 +235,7 @@ def predict():
 
 # ---------------------------------------------------------------------
 if __name__ == "__main__":
-    # 0.0.0.0 pour accepter les requêtes du réseau local
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    # IMPORTANT: Render fournit le port via la variable d'environnement PORT
+    port = int(os.environ.get("PORT", 8000))
+    # debug=False en prod; threaded=True pour accepter plusieurs requêtes
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
