@@ -1,0 +1,9 @@
+{
+  "model_type": "tf_savedmodel",
+  "model_path": ".",
+  "input_format": "image",
+  "img_size": [224, 224],
+  "scale_0_1": true,
+  "channels": 3,
+  "class_names": ["Early Blight", "Late Blight", "Healthy"]
+}
