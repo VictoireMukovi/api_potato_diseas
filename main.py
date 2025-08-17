@@ -2,6 +2,7 @@
 import os
 # Réduire les logs verbeux de TensorFlow AVANT de l'importer
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # 0: tout, 1: filtre INFO, 2: filtre INFO+WARNING, 3: seulement erreurs
+import traceback
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -230,8 +231,11 @@ def predict():
         out.update({"model": model_name})
         return jsonify(out)
 
+    # except Exception as e:
+    #     return jsonify({"error": str(e)}), 500
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
+
 
 # ---------------------------------------------------------------------
 if __name__ == "__main__":
